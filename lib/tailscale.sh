@@ -45,7 +45,7 @@ tailscale_up_with_ssh() {
   local cmd=(tailscale up --ssh)
   local output
 
-  if [[ "${NETWORKING_NONINTERACTIVE:-0}" == "1" ]]; then
+  if [[ "${BOREALIS_NETWORKING_NONINTERACTIVE:-0}" == "1" ]]; then
     cmd+=(--accept-routes)
   fi
 
@@ -79,7 +79,7 @@ tailscale_up_with_ssh() {
   if grep -q "does not run in sandboxed Tailscale GUI builds" <<<"$output"; then
     log_warn "Current macOS Tailscale build does not support --ssh. Falling back without --ssh."
     local fallback_cmd=(tailscale up)
-    if [[ "${NETWORKING_NONINTERACTIVE:-0}" == "1" ]]; then
+    if [[ "${BOREALIS_NETWORKING_NONINTERACTIVE:-0}" == "1" ]]; then
       fallback_cmd+=(--accept-routes)
     fi
     if [[ "$OS_FAMILY" == "linux" ]]; then

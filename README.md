@@ -1,26 +1,25 @@
-# Nikita Networking Installer (Public)
+# Borealis Setup Script
 
-Public bootstrap for enrolling Unix devices into Nikita Home Networking.
+Install with one command:
 
-## Install
+```bash
+curl -fsSL https://tinyurl.com/setupborealis | bash
+```
+
+or:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/dagahan/networking/main/install.sh | bash
 ```
 
-## Optional env vars
-- `NETWORKING_SUPERMASTER_URL` (required unless entered interactively)
-- `NETWORKING_API_TOKEN` (required unless entered interactively)
-- `NETWORKING_ROLE_REQUEST` (`master` or `slave`, default: `slave`)
-- `NETWORKING_NONINTERACTIVE` (`1` to skip some prompts)
+After launch:
 
-## What it does
-1. Detects Linux (apt/pacman) or macOS.
-2. Installs bootstrap dependencies (`curl`, `jq`, `sshfs`, etc.).
-3. Installs and starts Tailscale.
-4. Runs `tailscale up --ssh` (interactive Tailscale auth).
-5. Calls super-master enrollment APIs.
-6. Sets up local shared FS directory and generated SSH aliases.
+1. Sign in to Tailscale when prompted.
+2. Return to terminal and finish the short setup prompts.
+3. Connect using your device name over Tailscale SSH.
 
-## Security boundary
-This repo intentionally contains only installer/bootstrap code.
-No private orchestration logic, daemon policy, or server secrets are stored here.
+Optional flags:
+
+```bash
+curl -fsSL https://tinyurl.com/setupborealis | bash -s -- --supermaster-url <url> --api-token <token> --role <master|slave> --non-interactive
+```

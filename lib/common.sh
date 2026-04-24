@@ -2,19 +2,19 @@
 set -Eeuo pipefail
 
 log_step() {
-  printf '\n[networking] %s\n' "$*"
+  printf '\n[borealis_networking] %s\n' "$*"
 }
 
 log_info() {
-  printf '[networking] %s\n' "$*"
+  printf '[borealis_networking] %s\n' "$*"
 }
 
 log_warn() {
-  printf '[networking][warn] %s\n' "$*" >&2
+  printf '[borealis_networking][warn] %s\n' "$*" >&2
 }
 
 log_error() {
-  printf '[networking][error] %s\n' "$*" >&2
+  printf '[borealis_networking][error] %s\n' "$*" >&2
 }
 
 is_command() {

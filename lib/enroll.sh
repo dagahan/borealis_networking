@@ -35,13 +35,13 @@ resolve_arch() {
 
 
 enroll_start() {
-  require_env_or_prompt "NETWORKING_SUPERMASTER_URL" "Super-master URL (e.g. https://nikiniki.com:8080)"
-  require_env_or_prompt "NETWORKING_API_TOKEN" "Super-master API token" 1
+  require_env_or_prompt "BOREALIS_NETWORKING_SUPERMASTER_URL" "Super-master URL (e.g. https://nikiniki.com:8080)"
+  require_env_or_prompt "BOREALIS_NETWORKING_API_TOKEN" "Super-master API token" 1
 
   local role
-  role="${NETWORKING_ROLE_REQUEST:-slave}"
+  role="${BOREALIS_NETWORKING_ROLE_REQUEST:-slave}"
   if [[ "$role" != "master" && "$role" != "slave" ]]; then
-    log_error "NETWORKING_ROLE_REQUEST must be master or slave"
+    log_error "BOREALIS_NETWORKING_ROLE_REQUEST must be master or slave"
     exit 1
   fi
 
@@ -65,9 +65,9 @@ enroll_start() {
     '{machine_id: $machine_id, hostname: $hostname, os_name: $os_name, arch: $arch, requested_role: $requested_role}')"
 
   local response
-  response="$(curl -fsSL -X POST "${NETWORKING_SUPERMASTER_URL%/}/enroll/start" \
+  response="$(curl -fsSL -X POST "${BOREALIS_NETWORKING_SUPERMASTER_URL%/}/enroll/start" \
     -H "Content-Type: application/json" \
-    -H "x-api-token: $NETWORKING_API_TOKEN" \
+    -H "x-api-token: $BOREALIS_NETWORKING_API_TOKEN" \
     -H "x-actor: installer" \
     --data "$payload")"
 
@@ -110,9 +110,9 @@ enroll_complete() {
       tailscale_user_login: ($tailscale_user_login | if length > 0 then . else null end)
     }')"
 
-  curl -fsSL -X POST "${NETWORKING_SUPERMASTER_URL%/}/enroll/complete" \
+  curl -fsSL -X POST "${BOREALIS_NETWORKING_SUPERMASTER_URL%/}/enroll/complete" \
     -H "Content-Type: application/json" \
-    -H "x-api-token: $NETWORKING_API_TOKEN" \
+    -H "x-api-token: $BOREALIS_NETWORKING_API_TOKEN" \
     -H "x-actor: installer" \
     --data "$payload" >/dev/null
 }
