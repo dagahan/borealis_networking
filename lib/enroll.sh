@@ -87,10 +87,15 @@ enroll_start() {
 enroll_complete() {
   local enrollment_token="$1"
 
-  mapfile -t ts_identity < <(collect_tailscale_identity)
-  local ts_device_id="${ts_identity[0]:-}"
-  local ts_name="${ts_identity[1]:-}"
-  local ts_user="${ts_identity[2]:-}"
+  local ts_identity
+  local ts_device_id
+  local ts_name
+  local ts_user
+
+  ts_identity="$(collect_tailscale_identity)"
+  ts_device_id="$(printf '%s\n' "$ts_identity" | sed -n '1p')"
+  ts_name="$(printf '%s\n' "$ts_identity" | sed -n '2p')"
+  ts_user="$(printf '%s\n' "$ts_identity" | sed -n '3p')"
 
   local payload
   payload="$(jq -n \
@@ -100,9 +105,9 @@ enroll_complete() {
     --arg tailscale_user_login "$ts_user" \
     '{
       enrollment_token: $enrollment_token,
-      tailscale_device_id: ($tailscale_device_id | select(length > 0)),
-      tailscale_name: ($tailscale_name | select(length > 0)),
-      tailscale_user_login: ($tailscale_user_login | select(length > 0))
+      tailscale_device_id: ($tailscale_device_id | if length > 0 then . else null end),
+      tailscale_name: ($tailscale_name | if length > 0 then . else null end),
+      tailscale_user_login: ($tailscale_user_login | if length > 0 then . else null end)
     }')"
 
   curl -fsSL -X POST "${NETWORKING_SUPERMASTER_URL%/}/enroll/complete" \

@@ -43,17 +43,55 @@ ensure_tailscaled_running() {
 
 tailscale_up_with_ssh() {
   local cmd=(tailscale up --ssh)
+  local output
 
   if [[ "${NETWORKING_NONINTERACTIVE:-0}" == "1" ]]; then
     cmd+=(--accept-routes)
   fi
 
   if [[ "$OS_FAMILY" == "linux" ]]; then
-    run_sudo "${cmd[@]}"
+    if output="$(run_sudo "${cmd[@]}" 2>&1)"; then
+      return
+    fi
+  else
+    if output="$("${cmd[@]}" 2>&1)"; then
+      return
+    fi
+  fi
+
+  if grep -q "requires mentioning all" <<<"$output"; then
+    local suggested
+    suggested="$(printf '%s\n' "$output" | sed -n 's/^[[:space:]]*//; s/^tailscale up /tailscale up /p' | tail -n 1)"
+    if [[ -n "$suggested" ]]; then
+      log_info "Applying existing Tailscale non-default flags: $suggested"
+      if [[ "$OS_FAMILY" == "linux" ]]; then
+        if output="$(run_sudo bash -lc "$suggested" 2>&1)"; then
+          return
+        fi
+      else
+        if output="$(bash -lc "$suggested" 2>&1)"; then
+          return
+        fi
+      fi
+    fi
+  fi
+
+  if grep -q "does not run in sandboxed Tailscale GUI builds" <<<"$output"; then
+    log_warn "Current macOS Tailscale build does not support --ssh. Falling back without --ssh."
+    local fallback_cmd=(tailscale up)
+    if [[ "${NETWORKING_NONINTERACTIVE:-0}" == "1" ]]; then
+      fallback_cmd+=(--accept-routes)
+    fi
+    if [[ "$OS_FAMILY" == "linux" ]]; then
+      run_sudo "${fallback_cmd[@]}"
+    else
+      "${fallback_cmd[@]}"
+    fi
     return
   fi
 
-  "${cmd[@]}"
+  log_error "$output"
+  exit 1
 }
 
 
