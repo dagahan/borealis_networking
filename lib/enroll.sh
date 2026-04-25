@@ -92,7 +92,7 @@ enroll_complete() {
   local ts_name
   local ts_user
 
-  ts_identity="$(collect_tailscale_identity)"
+  ts_identity="$(wait_for_tailscale_identity)"
   ts_device_id="$(printf '%s\n' "$ts_identity" | sed -n '1p')"
   ts_name="$(printf '%s\n' "$ts_identity" | sed -n '2p')"
   ts_user="$(printf '%s\n' "$ts_identity" | sed -n '3p')"
@@ -105,9 +105,9 @@ enroll_complete() {
     --arg tailscale_user_login "$ts_user" \
     '{
       enrollment_token: $enrollment_token,
-      tailscale_device_id: ($tailscale_device_id | if length > 0 then . else null end),
-      tailscale_name: ($tailscale_name | if length > 0 then . else null end),
-      tailscale_user_login: ($tailscale_user_login | if length > 0 then . else null end)
+      tailscale_device_id: $tailscale_device_id,
+      tailscale_name: $tailscale_name,
+      tailscale_user_login: $tailscale_user_login
     }')"
 
   curl -fsSL -X POST "${BOREALIS_NETWORKING_SUPERMASTER_URL%/}/enroll/complete" \

@@ -113,3 +113,39 @@ collect_tailscale_identity() {
 
   printf '%s\n%s\n%s\n' "$ts_device_id" "$ts_name" "$ts_user"
 }
+
+
+wait_for_tailscale_identity() {
+  local timeout_seconds=300
+  local interval_seconds=5
+  local start_epoch
+  start_epoch="$(date +%s)"
+
+  while true; do
+    local ts_identity
+    local ts_device_id
+    local ts_name
+    local ts_user
+    ts_identity="$(collect_tailscale_identity)"
+    ts_device_id="$(printf '%s\n' "$ts_identity" | sed -n '1p')"
+    ts_name="$(printf '%s\n' "$ts_identity" | sed -n '2p')"
+    ts_user="$(printf '%s\n' "$ts_identity" | sed -n '3p')"
+
+    if [[ -n "$ts_device_id" && -n "$ts_name" && -n "$ts_user" ]]; then
+      printf '%s\n%s\n%s\n' "$ts_device_id" "$ts_name" "$ts_user"
+      return
+    fi
+
+    local current_epoch
+    local elapsed_seconds
+    current_epoch="$(date +%s)"
+    elapsed_seconds="$((current_epoch - start_epoch))"
+    if ((elapsed_seconds >= timeout_seconds)); then
+      log_error "Tailscale identity is not ready. If device approval is enabled, approve this device and rerun installer."
+      exit 1
+    fi
+
+    log_info "Waiting for device to become fully authenticated in tailnet..."
+    sleep "$interval_seconds"
+  done
+}
