@@ -36,5 +36,4 @@ install_macos_dependencies() {
   fi
 
   brew list jq >/dev/null 2>&1 || brew install jq
-  brew list tailscale >/dev/null 2>&1 || true
 }
