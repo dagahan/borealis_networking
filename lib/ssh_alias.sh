@@ -31,13 +31,11 @@ write_refresh_script() {
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: "${BOREALIS_NETWORKING_SUPERMASTER_URL:?BOREALIS_NETWORKING_SUPERMASTER_URL is required}"
-: "${BOREALIS_NETWORKING_API_TOKEN:?BOREALIS_NETWORKING_API_TOKEN is required}"
+: "${BOREALIS_NETWORKING_SUPERMASTER_URL:=http://100.119.27.108:8080}"
 
 SSH_CONFIG_INCLUDE_FILE="$HOME/.ssh/config.d/borealis_networking"
 
 response="$(curl -fsSL "${BOREALIS_NETWORKING_SUPERMASTER_URL%/}/devices" \
-  -H "x-api-token: ${BOREALIS_NETWORKING_API_TOKEN}" \
   -H "x-actor: borealis-networking-ssh-alias-refresh")"
 
 {
@@ -68,7 +66,6 @@ SCRIPT
 
 refresh_ssh_aliases() {
   export BOREALIS_NETWORKING_SUPERMASTER_URL
-  export BOREALIS_NETWORKING_API_TOKEN
 
   "$BOREALIS_NETWORKING_STATE_DIR/bin/borealis-networking-refresh-ssh-aliases" || log_warn "SSH alias refresh failed"
 

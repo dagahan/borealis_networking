@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="${BASH_SOURCE[0]-$0}"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 LIB_DIR="$SCRIPT_DIR/lib"
 TMP_LIB_DIR=""
-CLI_SUPERMASTER_URL=""
-CLI_API_TOKEN=""
+DEFAULT_SUPERMASTER_URL="http://100.119.27.108:8080"
+CLI_SUPERMASTER_URL="$DEFAULT_SUPERMASTER_URL"
 CLI_ROLE_REQUEST=""
 CLI_NONINTERACTIVE="0"
 
@@ -14,8 +15,7 @@ print_help() {
 Usage: install.sh [options]
 
 Options:
-  -u, --supermaster-url <url>  Super-master URL
-  -t, --api-token <token>      Super-master API token
+  -u, --supermaster-url <url>  Super-master URL (default: http://100.119.27.108:8080)
   -r, --role <master|slave>    Requested role
   -n, --non-interactive        Skip interactive input where possible
   -h, --help               Show this help
@@ -31,9 +31,10 @@ parse_args() {
         shift 2
         ;;
       -t|--api-token)
-        [[ $# -ge 2 ]] || { printf 'Missing value for --api-token\n' >&2; exit 1; }
-        CLI_API_TOKEN="$2"
-        shift 2
+        shift
+        if [[ $# -gt 0 ]]; then
+          shift
+        fi
         ;;
       -r|--role)
         [[ $# -ge 2 ]] || { printf 'Missing value for --role\n' >&2; exit 1; }
@@ -66,10 +67,6 @@ export_cli_inputs() {
     export BOREALIS_NETWORKING_SUPERMASTER_URL="$CLI_SUPERMASTER_URL"
   fi
 
-  if [[ -n "$CLI_API_TOKEN" ]]; then
-    export BOREALIS_NETWORKING_API_TOKEN="$CLI_API_TOKEN"
-  fi
-
   if [[ -n "$CLI_ROLE_REQUEST" ]]; then
     export BOREALIS_NETWORKING_ROLE_REQUEST="$CLI_ROLE_REQUEST"
   fi
@@ -85,7 +82,7 @@ bootstrap_libs() {
   fi
 
   local base_url
-  base_url="${BOREALIS_NETWORKING_INSTALL_BASE_URL:-https://raw.githubusercontent.com/dagahan/borealis_networking/main/lib}"
+  base_url="${BOREALIS_NETWORKING_INSTALL_BASE_URL:-https://raw.githubusercontent.com/dagahan/borealis_networking/release/1.3.0/lib}"
   TMP_LIB_DIR="$(mktemp -d)"
   LIB_DIR="$TMP_LIB_DIR"
 

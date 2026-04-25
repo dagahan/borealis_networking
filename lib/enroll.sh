@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+DEFAULT_SUPERMASTER_URL="http://100.119.27.108:8080"
+
 
 resolve_machine_id() {
   if [[ "$OS_FAMILY" == "linux" && -f /etc/machine-id ]]; then
@@ -35,8 +37,7 @@ resolve_arch() {
 
 
 enroll_start() {
-  require_env_or_prompt "BOREALIS_NETWORKING_SUPERMASTER_URL" "Super-master URL (e.g. https://nikiniki.com:8080)"
-  require_env_or_prompt "BOREALIS_NETWORKING_API_TOKEN" "Super-master API token" 1
+  export BOREALIS_NETWORKING_SUPERMASTER_URL="${BOREALIS_NETWORKING_SUPERMASTER_URL:-$DEFAULT_SUPERMASTER_URL}"
 
   local role
   role="${BOREALIS_NETWORKING_ROLE_REQUEST:-slave}"
@@ -67,7 +68,6 @@ enroll_start() {
   local response
   response="$(curl -fsSL -X POST "${BOREALIS_NETWORKING_SUPERMASTER_URL%/}/enroll/start" \
     -H "Content-Type: application/json" \
-    -H "x-api-token: $BOREALIS_NETWORKING_API_TOKEN" \
     -H "x-actor: installer" \
     --data "$payload")"
 
@@ -112,7 +112,6 @@ enroll_complete() {
 
   curl -fsSL -X POST "${BOREALIS_NETWORKING_SUPERMASTER_URL%/}/enroll/complete" \
     -H "Content-Type: application/json" \
-    -H "x-api-token: $BOREALIS_NETWORKING_API_TOKEN" \
     -H "x-actor: installer" \
     --data "$payload" >/dev/null
 }
