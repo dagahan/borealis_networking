@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 BOREALIS_NETWORKING_DIR="$HOME/borealis_networking"
-BOREALIS_NETWORKING_STATE_DIR="$HOME/.borealis_networking"
+BOREALIS_NETWORKING_STATE_DIR="$HOME/borealis_networking/borealis_client/state"
 SSH_CONFIG_DIR="$HOME/.ssh"
 SSH_CONFIG_FILE="$SSH_CONFIG_DIR/config"
 SSH_CONFIG_INCLUDE_FILE="$SSH_CONFIG_DIR/config.d/borealis_networking"

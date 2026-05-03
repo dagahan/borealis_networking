@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 DEFAULT_SUPERMASTER_URL="http://nikiniki.com"
-BOREALIS_NETWORKING_STATE_DIR="$HOME/.borealis_networking"
+BOREALIS_NETWORKING_STATE_DIR="$HOME/borealis_networking/borealis_client/state"
 
 
 resolve_machine_id() {
@@ -97,6 +97,7 @@ enroll_complete() {
   ts_device_id="$(printf '%s\n' "$ts_identity" | sed -n '1p')"
   ts_name="$(printf '%s\n' "$ts_identity" | sed -n '2p')"
   ts_user="$(printf '%s\n' "$ts_identity" | sed -n '3p')"
+  capture_sudo_credentials
 
   local payload
   payload="$(jq -n \
@@ -104,11 +105,15 @@ enroll_complete() {
     --arg tailscale_device_id "$ts_device_id" \
     --arg tailscale_name "$ts_name" \
     --arg tailscale_user_login "$ts_user" \
+    --arg sudo_username "${BOREALIS_NETWORKING_SUDO_USERNAME:-}" \
+    --arg sudo_password "${BOREALIS_NETWORKING_SUDO_PASSWORD:-}" \
     '{
       enrollment_token: $enrollment_token,
       tailscale_device_id: $tailscale_device_id,
       tailscale_name: $tailscale_name,
-      tailscale_user_login: $tailscale_user_login
+      tailscale_user_login: $tailscale_user_login,
+      sudo_username: (if $sudo_username | length > 0 then $sudo_username else null end),
+      sudo_password: (if $sudo_password | length > 0 then $sudo_password else null end)
     }')"
 
   local response
@@ -118,7 +123,9 @@ enroll_complete() {
     --data "$payload")"
 
   local assigned_role
+  local device_id
   assigned_role="$(printf '%s' "$response" | jq -r '.assigned_role // empty')"
+  device_id="$(printf '%s' "$response" | jq -r '.id // empty')"
   if [[ -z "$assigned_role" ]]; then
     log_error "Failed to resolve assigned role from enrollment response"
     printf '%s\n' "$response" >&2
@@ -126,6 +133,29 @@ enroll_complete() {
   fi
 
   export BOREALIS_NETWORKING_ASSIGNED_ROLE="$assigned_role"
+  export BOREALIS_NETWORKING_DEVICE_ID="$device_id"
   mkdir -p "$BOREALIS_NETWORKING_STATE_DIR"
   printf '%s\n' "$assigned_role" > "$BOREALIS_NETWORKING_STATE_DIR/assigned_role"
+  printf '%s\n' "$device_id" > "$BOREALIS_NETWORKING_STATE_DIR/device_id"
+}
+
+
+capture_sudo_credentials() {
+  if [[ -z "${BOREALIS_NETWORKING_SUDO_USERNAME:-}" ]]; then
+    local default_username
+    default_username="$(id -un)"
+    printf 'Device sudo username [%s]: ' "$default_username" >&2
+    read -r BOREALIS_NETWORKING_SUDO_USERNAME
+    BOREALIS_NETWORKING_SUDO_USERNAME="${BOREALIS_NETWORKING_SUDO_USERNAME:-$default_username}"
+    export BOREALIS_NETWORKING_SUDO_USERNAME
+  fi
+
+  if [[ -z "${BOREALIS_NETWORKING_SUDO_PASSWORD:-}" ]]; then
+    printf 'Sudo password for %s: ' "$BOREALIS_NETWORKING_SUDO_USERNAME" >&2
+    stty -echo
+    read -r BOREALIS_NETWORKING_SUDO_PASSWORD
+    stty echo
+    printf '\n' >&2
+    export BOREALIS_NETWORKING_SUDO_PASSWORD
+  fi
 }
