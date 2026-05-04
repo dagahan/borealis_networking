@@ -129,6 +129,7 @@ tailscale_wait_for_auth_completion() {
   while true; do
     if tailscale_is_authenticated; then
       log_info "Auth completed, continuing enrollment"
+      cleanup_tailscale_up_bg
       return
     fi
 
@@ -150,6 +151,7 @@ tailscale_wait_for_auth_completion() {
         log_error "Complete login here: $last_auth_url"
       fi
       log_error "Retry command: $(retry_tailscale_auth_command)"
+      cleanup_tailscale_up_bg
       exit 1
     fi
 
@@ -248,63 +250,46 @@ ensure_tailscaled_running() {
 }
 
 
+TAILSCALE_UP_BG_PID=""
+TAILSCALE_UP_BG_OUTFILE=""
+
+cleanup_tailscale_up_bg() {
+  if [[ -n "$TAILSCALE_UP_BG_PID" ]] && kill -0 "$TAILSCALE_UP_BG_PID" 2>/dev/null; then
+    kill "$TAILSCALE_UP_BG_PID" 2>/dev/null || true
+    wait "$TAILSCALE_UP_BG_PID" 2>/dev/null || true
+  fi
+  if [[ -n "$TAILSCALE_UP_BG_OUTFILE" && -f "$TAILSCALE_UP_BG_OUTFILE" ]]; then
+    rm -f "$TAILSCALE_UP_BG_OUTFILE"
+  fi
+  TAILSCALE_UP_BG_PID=""
+  TAILSCALE_UP_BG_OUTFILE=""
+}
+
 tailscale_up_with_ssh() {
-  local cmd=("$TAILSCALE_BIN" up --ssh)
-  local output=""
+  TAILSCALE_UP_BG_OUTFILE="$(mktemp)"
+  local out_file="$TAILSCALE_UP_BG_OUTFILE"
 
   if [[ "$OS_FAMILY" == "linux" ]]; then
-    if output="$(run_sudo "${cmd[@]}" 2>&1)"; then
-      printf '%s' "$output"
-      return
-    fi
+    run_sudo "$TAILSCALE_BIN" up --ssh >"$out_file" 2>&1 &
   else
-    if output="$("${cmd[@]}" 2>&1)"; then
-      printf '%s' "$output"
-      return
-    fi
+    "$TAILSCALE_BIN" up --ssh >"$out_file" 2>&1 &
   fi
+  TAILSCALE_UP_BG_PID="$!"
 
-  if grep -q "requires mentioning all" <<<"$output"; then
-    local suggested
-    suggested="$(printf '%s\n' "$output" | sed -n 's/^[[:space:]]*//; s/^tailscale up /tailscale up /p' | tail -n 1)"
-    if [[ -n "$suggested" ]]; then
-      log_info "Applying existing Tailscale non-default flags: $suggested"
-      if [[ "$OS_FAMILY" == "linux" ]]; then
-        if output="$(run_sudo bash -lc "$suggested" 2>&1)"; then
-          printf '%s' "$output"
-          return
-        fi
-      else
-        if output="$(bash -lc "$suggested" 2>&1)"; then
-          printf '%s' "$output"
-          return
-        fi
-      fi
+  local elapsed=0
+  local max_wait=30
+  while ((elapsed < max_wait)); do
+    if grep -q 'https://login\.tailscale\.com' "$out_file" 2>/dev/null; then
+      break
     fi
-  fi
-
-  if grep -q "does not run in sandboxed Tailscale GUI builds" <<<"$output"; then
-    log_warn "Current macOS Tailscale build does not support --ssh. Falling back without --ssh."
-    local fallback_cmd=("$TAILSCALE_BIN" up)
-
-    if [[ "$OS_FAMILY" == "linux" ]]; then
-      if ! output="$(run_sudo "${fallback_cmd[@]}" 2>&1)"; then
-        log_error "$output"
-        exit 1
-      fi
-    else
-      if ! output="$("${fallback_cmd[@]}" 2>&1)"; then
-        log_error "$output"
-        exit 1
-      fi
+    if ! kill -0 "$TAILSCALE_UP_BG_PID" 2>/dev/null; then
+      break
     fi
+    sleep 1
+    ((elapsed += 1))
+  done
 
-    printf '%s' "$output"
-    return
-  fi
-
-  log_error "$output"
-  exit 1
+  cat "$out_file"
 }
 
 
