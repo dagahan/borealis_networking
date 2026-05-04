@@ -352,7 +352,12 @@ collect_tailscale_identity() {
 
   ts_device_id="$(printf '%s' "$status_json" | jq -r '.Self.ID // empty')"
   ts_name="$(printf '%s' "$status_json" | jq -r '.Self.DNSName // .Self.HostName // empty')"
-  ts_user="$(printf '%s' "$status_json" | jq -r '.Self.UserProfile.LoginName // empty')"
+  ts_user="$(printf '%s' "$status_json" | jq -r '
+    if .Self.UserProfile.LoginName? and (.Self.UserProfile.LoginName? | length) > 0 then
+      .Self.UserProfile.LoginName
+    else
+      (.User // {}) [(.Self.UserID | tostring)] .LoginName // empty
+    end')"
 
   printf '%s\n%s\n%s\n' "$ts_device_id" "$ts_name" "$ts_user"
 }
