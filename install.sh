@@ -58,7 +58,7 @@ prompt_role_if_missing() {
   while true; do
     printf 'Role for this device [master/slave]: ' >/dev/tty
     read -r role </dev/tty
-    role="${role,,}"
+    role="$(printf '%s' "$role" | tr '[:upper:]' '[:lower:]')"
     if [[ "$role" == "master" || "$role" == "slave" ]]; then
       CLI_ROLE_REQUEST="$role"
       return
