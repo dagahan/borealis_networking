@@ -183,8 +183,10 @@ install_tailscale() {
     exit 1
   fi
 
-  if brew list --cask tailscale-app >/dev/null 2>&1; then
-    log_info "Tailscale app already installed"
+  if tailscale_ready; then
+    log_info "Tailscale already installed"
+  elif brew list --cask tailscale-app >/dev/null 2>&1 || brew list tailscale >/dev/null 2>&1; then
+    log_info "Tailscale already installed via Homebrew"
   else
     if ! brew install --cask tailscale-app; then
       log_error "Failed to install Tailscale app cask on macOS"
