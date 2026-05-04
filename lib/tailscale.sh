@@ -312,7 +312,12 @@ ensure_tailscale_authenticated() {
   log_info "Checking Tailscale auth state"
 
   if tailscale_is_authenticated; then
-    log_info "Auth completed, continuing enrollment"
+    local ts_identity ts_user
+    ts_identity="$(collect_tailscale_identity 2>/dev/null || true)"
+    ts_user="$(printf '%s\n' "$ts_identity" | sed -n '3p')"
+    log_warn "Already logged in to Tailscale as: ${ts_user:-unknown}"
+    log_warn "If this is not the account you want, run: tailscale logout"
+    log_info "Continuing enrollment with existing Tailscale session"
     return
   fi
 
