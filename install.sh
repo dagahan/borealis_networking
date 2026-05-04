@@ -50,23 +50,6 @@ parse_args() {
   done
 }
 
-prompt_role_if_missing() {
-  if [[ -n "$CLI_ROLE_REQUEST" ]]; then
-    return
-  fi
-  local role=""
-  while true; do
-    printf 'Role for this device (master/slave): ' >/dev/tty
-    read -r role </dev/tty
-    role="$(printf '%s' "$role" | tr '[:upper:]' '[:lower:]')"
-    if [[ "$role" == "master" || "$role" == "slave" ]]; then
-      CLI_ROLE_REQUEST="$role"
-      return
-    fi
-    printf 'Invalid role "%s" — enter master or slave\n' "$role" >/dev/tty
-  done
-}
-
 export_cli_inputs() {
   if [[ -n "$CLI_SUPERMASTER_URL" ]]; then
     export BOREALIS_NETWORKING_SUPERMASTER_URL="$CLI_SUPERMASTER_URL"
@@ -101,7 +84,6 @@ cleanup() {
 trap cleanup EXIT
 
 parse_args "$@"
-prompt_role_if_missing
 export_cli_inputs
 bootstrap_libs
 

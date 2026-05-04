@@ -41,7 +41,19 @@ enroll_start() {
   export BOREALIS_NETWORKING_SUPERMASTER_URL="${BOREALIS_NETWORKING_SUPERMASTER_URL:-$DEFAULT_SUPERMASTER_URL}"
 
   local role
-  role="${BOREALIS_NETWORKING_ROLE_REQUEST:-slave}"
+  role="${BOREALIS_NETWORKING_ROLE_REQUEST:-}"
+  if [[ -z "$role" ]]; then
+    while true; do
+      printf 'Role for this device (master/slave): ' >/dev/tty
+      read -r role </dev/tty
+      role="$(printf '%s' "$role" | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz')"
+      if [[ "$role" == "master" || "$role" == "slave" ]]; then
+        break
+      fi
+      printf 'Invalid — enter master or slave\n' >/dev/tty
+      role=""
+    done
+  fi
   if [[ "$role" != "master" && "$role" != "slave" ]]; then
     log_error "BOREALIS_NETWORKING_ROLE_REQUEST must be master or slave"
     exit 1
