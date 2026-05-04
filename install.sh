@@ -5,7 +5,7 @@ SCRIPT_PATH="${BASH_SOURCE[0]-$0}"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 LIB_DIR="$SCRIPT_DIR/lib"
 TMP_LIB_DIR=""
-DEFAULT_SUPERMASTER_URL="http://nikiniki.com"
+DEFAULT_SUPERMASTER_URL="http://193.124.182.91"
 CLI_SUPERMASTER_URL="$DEFAULT_SUPERMASTER_URL"
 CLI_ROLE_REQUEST=""
 
@@ -14,8 +14,8 @@ print_help() {
 Usage: install.sh [options]
 
 Options:
-  -u, --supermaster-url <url>  Super-master URL (default: http://nikiniki.com)
-  -r, --role <master|slave>    Requested role
+  -u, --supermaster-url <url>  Super-master URL (default: http://193.124.182.91)
+  -r, --role <master|slave>    Requested role (prompted interactively if omitted)
   -h, --help               Show this help
 EOF
 }
@@ -47,6 +47,23 @@ parse_args() {
         exit 1
         ;;
     esac
+  done
+}
+
+prompt_role_if_missing() {
+  if [[ -n "$CLI_ROLE_REQUEST" ]]; then
+    return
+  fi
+  local role=""
+  while true; do
+    printf 'Role for this device [master/slave]: ' >/dev/tty
+    read -r role </dev/tty
+    role="${role,,}"
+    if [[ "$role" == "master" || "$role" == "slave" ]]; then
+      CLI_ROLE_REQUEST="$role"
+      return
+    fi
+    printf 'Invalid role "%s" — enter master or slave\n' "$role" >/dev/tty
   done
 }
 
@@ -84,6 +101,7 @@ cleanup() {
 trap cleanup EXIT
 
 parse_args "$@"
+prompt_role_if_missing
 export_cli_inputs
 bootstrap_libs
 

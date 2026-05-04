@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-DEFAULT_SUPERMASTER_URL="http://nikiniki.com"
+DEFAULT_SUPERMASTER_URL="http://193.124.182.91"
 BOREALIS_NETWORKING_STATE_DIR="$HOME/borealis_networking/borealis_client/state"
 
 
@@ -144,18 +144,18 @@ capture_sudo_credentials() {
   if [[ -z "${BOREALIS_NETWORKING_SUDO_USERNAME:-}" ]]; then
     local default_username
     default_username="$(id -un)"
-    printf 'Device sudo username [%s]: ' "$default_username" >&2
-    read -r BOREALIS_NETWORKING_SUDO_USERNAME
+    printf 'Device sudo username [%s]: ' "$default_username" >/dev/tty
+    read -r BOREALIS_NETWORKING_SUDO_USERNAME </dev/tty
     BOREALIS_NETWORKING_SUDO_USERNAME="${BOREALIS_NETWORKING_SUDO_USERNAME:-$default_username}"
     export BOREALIS_NETWORKING_SUDO_USERNAME
   fi
 
   if [[ -z "${BOREALIS_NETWORKING_SUDO_PASSWORD:-}" ]]; then
-    printf 'Sudo password for %s: ' "$BOREALIS_NETWORKING_SUDO_USERNAME" >&2
-    stty -echo
-    read -r BOREALIS_NETWORKING_SUDO_PASSWORD
-    stty echo
-    printf '\n' >&2
+    printf 'Sudo password for %s: ' "$BOREALIS_NETWORKING_SUDO_USERNAME" >/dev/tty
+    stty -echo </dev/tty
+    read -r BOREALIS_NETWORKING_SUDO_PASSWORD </dev/tty
+    stty echo </dev/tty
+    printf '\n' >/dev/tty
     export BOREALIS_NETWORKING_SUDO_PASSWORD
   fi
 }
