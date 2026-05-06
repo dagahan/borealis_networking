@@ -91,7 +91,7 @@ install_client_runtime() {
     fi
   else
     cat > "$env_file" <<ENV
-BOREALIS_CLIENT_HOST=127.0.0.1
+BOREALIS_CLIENT_HOST=0.0.0.0
 BOREALIS_CLIENT_PORT=9091
 BOREALIS_CLIENT_MACHINE_ID=$(resolve_machine_id)
 BOREALIS_CLIENT_DEVICE_ID=${BOREALIS_NETWORKING_DEVICE_ID:-$(resolve_machine_id)}
