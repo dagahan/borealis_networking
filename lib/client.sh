@@ -124,6 +124,7 @@ ENV
     mv "$active_dir" "$previous_dir"
   fi
   mv "$new_dir" "$active_dir"
+  ln -sf "$env_file" "$active_dir/.env"
 
   if [[ -x "$active_dir/scripts/setup_node.sh" ]]; then
     BOREALIS_CLIENT_ROOT="$BOREALIS_CLIENT_ROOT" \
